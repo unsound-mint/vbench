@@ -60,3 +60,17 @@ def test_disturbance_flags_real_gpu_users_only():
     busy = {**quiet, "other_procs": [{"name": "firefox", "mem_mib": 900}]}
     assert any("firefox" in r for r in disturbance(quiet, busy))
     assert any("idle power" in r for r in disturbance({**quiet, "idle_power_w": 60.0}, quiet))
+
+
+def test_power_meter_takes_closing_sample(monkeypatch):
+    from vbench import power
+
+    monkeypatch.setattr(power.pynvml, "nvmlInit", lambda: None)
+    monkeypatch.setattr(power.pynvml, "nvmlShutdown", lambda: None)
+    monkeypatch.setattr(power.pynvml, "nvmlDeviceGetHandleByIndex", lambda i: object())
+    monkeypatch.setattr(power.pynvml, "nvmlDeviceGetPowerUsage", lambda h: 10_000)
+    with PowerMeter(interval_s=10.0) as meter:  # sampler takes only its opening sample
+        pass
+    assert len(meter.times_s) == len(meter.power_w) == 2
+    assert meter.times_s[1] >= meter.times_s[0]
+    assert meter.mean_power_w == pytest.approx(10.0)

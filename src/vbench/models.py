@@ -6,8 +6,8 @@ to know the native layout. `pretrained=False` skips weight download for
 memory/feasibility probes, which depend only on architecture.
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable
 
 import torch
 from torch import nn

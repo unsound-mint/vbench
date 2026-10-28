@@ -29,6 +29,7 @@ class PowerMeter:
         self.interval_s = interval_s
         self.times_s: list[float] = []
         self.power_w: list[float] = []
+        self._handle = None
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
 
@@ -42,14 +43,18 @@ class PowerMeter:
 
     def __enter__(self) -> "PowerMeter":
         pynvml.nvmlInit()
-        handle = pynvml.nvmlDeviceGetHandleByIndex(self.device_index)
-        self._thread = threading.Thread(target=self._run, args=(handle,), daemon=True)
+        self._handle = pynvml.nvmlDeviceGetHandleByIndex(self.device_index)
+        self._thread = threading.Thread(target=self._run, args=(self._handle,), daemon=True)
         self._thread.start()
         return self
 
     def __exit__(self, *exc) -> None:
         self._stop.set()
         self._thread.join()
+        # Closing sample, so the window ends at the context exit rather than up
+        # to one interval earlier.
+        self.times_s.append(time.perf_counter())
+        self.power_w.append(pynvml.nvmlDeviceGetPowerUsage(self._handle) / 1000)
         pynvml.nvmlShutdown()
 
     @property

@@ -2,7 +2,6 @@
 
 from functools import partial
 
-import torch
 from peft import AdaLoraConfig, LoraConfig, get_peft_model
 from torch import nn
 from torch.utils.checkpoint import checkpoint

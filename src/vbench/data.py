@@ -76,7 +76,7 @@ class ClipCache:
     def batch(self, idx: np.ndarray, device: str = "cuda") -> tuple[torch.Tensor, torch.Tensor]:
         order = np.argsort(self.cache_idx[idx])  # sorted reads are friendlier to the memmap
         x = np.empty((len(idx), FRAMES, SIZE, SIZE, 3), np.uint8)
-        for out_i, j in enumerate(order):
+        for j in order:
             x[j] = self.clips[self.cache_idx[idx[j]]]
         x = torch.from_numpy(x).to(device, non_blocking=True)
         return x, self.labels[idx].to(device)

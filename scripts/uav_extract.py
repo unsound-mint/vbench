@@ -46,7 +46,7 @@ class SplitFile(io.RawIOBase):
         n, out = len(b), 0
         while out < n and self.pos < self.total:
             start = 0
-            for i, size in enumerate(self.sizes):
+            for i, size in enumerate(self.sizes):  # noqa: B007 (i is read after the loop)
                 if self.pos < start + size:
                     break
                 start += size

@@ -20,11 +20,11 @@ from torch import nn
 
 from .adapt import apply_method, trainable_params_m
 from .data import ClipCache, class_names, preprocess, read_manifest
+from .environment import disturbance, gpu_state, idle_baseline
 from .hardware import snapshot
 from .inference import measure_inference
 from .models import MODELS
 from .netscore import ns_combined, ns_e, ns_m
-from .environment import disturbance, gpu_state, idle_baseline
 from .power import PowerMeter
 from .quant import quantize_linears
 

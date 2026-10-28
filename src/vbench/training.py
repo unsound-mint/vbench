@@ -75,7 +75,7 @@ def probe_step(
     except Exception as e:  # unsupported combination: record why, keep sweeping
         result.update(status="error", error=f"{type(e).__name__}: {str(e)[:200]}")
     finally:
-        del model, opt, x, y
+        model = opt = x = y = None  # drop references (a bare del trips ruff F821 on the closure)
         gc.collect()
         torch.cuda.empty_cache()
     return result

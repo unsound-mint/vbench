@@ -18,7 +18,6 @@ import json
 import subprocess
 import sys
 import time
-from pathlib import Path
 
 from vbench.models import MODELS
 from vbench.run import RunConfig, check_supported
