@@ -2,15 +2,21 @@
 
 How `vbench` fine-tunes and measures, and where it deliberately differs from
 the protocol it follows (a published-style efficiency study that ran on an
-RTX 5090 with full-length schedules). Read this before comparing numbers from
+RTX 5090 with full-length schedules; the study is not named in this repo, so
+its numbers cannot be cited from here). Read this before comparing numbers from
 this repo with numbers from anywhere else.
 
 ## Task and data
 
-Three aerial-video datasets are cached. MOD20 is the primary one (search,
-confirmation, test evaluation); ERA is the second dataset for the confirmation;
+Three aerial-video datasets are cached. MOD20 is the primary one (search and,
+in the confirmation protocol, test evaluation); ERA is a second dataset;
 UAV-Human is a consistency check on validation accuracy only. None of them is
 redistributed.
+
+Scope of the published results: every committed number is from the 3-epoch,
+single-seed (17) search, on validation data. The 10-epoch, 3-seed confirmation
+with test evaluation (below) is a documented protocol that the code implements;
+no confirmation results are published here, so no test accuracy is reported.
 
 - Dataset: ERA (aerial event recognition), 25 classes. Official training
   folder (1,473 clips) is split 80/20 per class with seed 17 into 1,181 fit and
@@ -59,9 +65,9 @@ There is no test evaluation, because the test subjects are not extracted.
   the reference protocol, to fit an 8 GB laptop GPU. Absolute accuracies are
   therefore lower than a full schedule would give; rankings under a fixed
   small budget are what these runs compare.
-- Seeds: the search uses seed 17. The confirmation (below) repeats the selected
-  configurations with seeds 17, 18, 19 and reports mean and sample standard
-  deviation. The seed changes the head initialisation, adapter initialisation,
+- Seeds: the search uses seed 17. The confirmation protocol (below; not run for
+  the published results) repeats the selected configurations with seeds 17, 18,
+  19 and reports mean and sample standard deviation. The seed changes the head initialisation, adapter initialisation,
   data order and augmentation; the train/validation split is fixed.
 - Learning rate / weight decay: Full FT 2.5e-4 / 0.05; every PEFT method
   1e-3 / 0. Hyperparameters were not tuned per model; they come from the
@@ -108,9 +114,13 @@ There is no test evaluation, because the test subjects are not extracted.
   bases; kept unmerged on quantized bases) and casting to the run's compute
   dtype, a zero tensor `1x16x3x224x224`, 5 warmup + 30 timed synchronized
   passes; energy per clip is mean power over a 12 s loop times mean latency.
+  The input is all zeros, which can lower switching activity and therefore
+  board power relative to real video, so the inference energy may be
+  understated. It is still comparable between runs of this repo, which all use
+  the same input.
 - **Accuracy**: top-1 on the validation split after the last epoch (no
   checkpoint selection); macro-F1 and balanced accuracy are also stored.
-- **Test accuracy** (confirmation runs only, `--test`): one pass over the test
+- **Test accuracy** (confirmation protocol only, `--test`; no results published): one pass over the test
   cache after the last epoch, outside the energy meter. Test data are never used
   for selection.
 - **Checkpoints** (`--save-checkpoint`, seed 17 of each confirmed configuration):
@@ -122,7 +132,19 @@ There is no test evaluation, because the test subjects are not extracted.
   Flagged runs are listed in the summary and should be repeated. Runs recorded
   before this was added show `n/a`.
 - **NS_E, NS_M, NS#**: 1/8-weight NetScore variants (`vbench.netscore`) from
-  top-1 (%), `E_v` (J) and peak training memory (MiB).
+  top-1 (%), `E_v` (J) and peak training memory (MiB). NetScore is Wong, "NetScore:
+  Towards Universal Metrics for Large-scale Performance Analysis of Deep Neural
+  Networks for Practical On-Device Edge Usage", 2019
+  ([arXiv:1806.05512](https://arxiv.org/abs/1806.05512)). The 1/8 exponents are
+  the protocol's choice; this repo does not record a further source for them.
+  - `E_v` scales with the number of validation clips (MOD20 326, ERA 292, UAV-Human
+    3,517), so NS_E and NS# are not comparable across datasets; compare models
+    within a dataset.
+  - `E_v` comes from a short window on a counter that refreshes about every
+    0.5 s, so it carries roughly +/-15 J of quantisation noise; NS differences
+    of a few hundredths are not meaningful.
+  - ERA runs predate the environment record: their idle power and `disturbed`
+    flag are `n/a`, and they were not screened for GPU sharing.
 
 ## Energy caveats
 
@@ -132,8 +154,8 @@ There is no test evaluation, because the test subjects are not extracted.
   the 0.02 s sampling oversamples it. Phases shorter than a few seconds are
   quantized; the 12 s inference loop holds about 24 independent readings.
 - Laptop GPUs throttle with temperature and power state. Runs are sequential
-  with a fresh process each. The search is single-seed; spread comes only from
-  the confirmation seeds. Keep other GPU work off the machine during runs: light
+  with a fresh process each. The search is single-seed; there is no
+  seed spread in the published numbers (the confirmation seeds were not run). Keep other GPU work off the machine during runs: light
   use shows up in the environment record, heavy use changes time and energy.
 
 ## Selection ("best supported configuration")
@@ -183,7 +205,8 @@ On UAV-Human, Hiera-B Full FT BF16 diverged at 2.5e-4 (0.7 % top-1) and reached
 
 ## Known limitations
 
-- Single device. The search is single-seed with a 3-epoch budget; only the confirmation has seeds and a 10-epoch budget.
+- Single device. The search is single-seed with a 3-epoch budget; seeds and the 10-epoch budget exist only in the unpublished confirmation protocol.
+- Inference energy is measured on an all-zero input (see above).
 - Hiera's normalization constants (0.45/0.225) are assumed, not documented by
   its package.
 - TimeSformer is natively 8 frames and is fed 16 (time embeddings interpolate).
