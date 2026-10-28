@@ -16,8 +16,9 @@ def test_trapezoid_linear_ramp():
     assert trapezoid_energy_j([0.0, 2.0], [0.0, 10.0]) == pytest.approx(10.0)
 
 
-def test_netscore_matches_published_row():
-    # VideoMAE-B Full FT on UAV-Human (63.04 %, 1829.9 MiB) reports NS_M = 63.83
+def test_netscore_matches_protocol_reference_value():
+    # Reference value from the protocol this repo follows (not a measurement
+    # made here): VideoMAE-B Full FT on UAV-Human, 63.04 %, 1829.9 MiB, NS_M = 63.83
     assert ns_m(63.04, 1829.9) == pytest.approx(63.83, abs=0.01)
 
 

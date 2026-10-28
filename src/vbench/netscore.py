@@ -1,4 +1,4 @@
-"""NetScore variants (Wong, 2019) with 1/8-weight efficiency terms.
+"""NetScore variants (Wong, 2019, arXiv:1806.05512) with 1/8-weight efficiency terms.
 
 Higher is better. `accuracy` is top-1 in percentage points, `energy_j` is the
 energy of one complete validation pass in joules, `memory_mib` is peak
