@@ -54,17 +54,23 @@ Notes that affect results:
 
 ## Running the experiments
 
-Get the datasets yourself (they are not redistributed). The commands below use
-ERA; `mod20` and `uavhuman` work the same way (`scripts/mod20_manifest.py`,
-`scripts/uav_extract.py` and `scripts/uav_manifest.py` build their manifests).
+Get the datasets yourself (they are not redistributed). MOD20 is the primary
+dataset (`docs/methodology.md`); ERA and `uavhuman` work the same way
+(`scripts/mod20_manifest.py`, `scripts/era_manifest.py`, `scripts/uav_extract.py`
+and `scripts/uav_manifest.py` build their manifests).
 
 ```sh
-uv run python scripts/run_experiments.py all 3 mod20      # search on the primary dataset
-uv run python scripts/run_experiments.py confirm 10 mod20 # 10 epochs, seeds 17-19, test split
-uv run python scripts/summarize.py 3 mod20
+uv run python scripts/mod20_manifest.py    # manifests/mod20_split.csv
+uv run python scripts/build_cache.py mod20 # decode once to uint8 frame caches
+uv run python scripts/run_experiments.py all 3 mod20   # staged search + ablation, 3 epochs
+uv run python scripts/summarize.py 3 mod20 # results/mod20_summary.md, results/mod20_runs.csv
 ```
 
-ERA, step by step:
+All published numbers are 3 epochs, one seed (17). `run_experiments.py confirm
+10 <dataset>` implements a 10-epoch, 3-seed confirmation with test evaluation,
+but its results are not published here; it is a documented protocol only.
+
+ERA, the second dataset, step by step:
 
 ```sh
 uv run python scripts/era_manifest.py      # manifests/era_split.csv
@@ -82,11 +88,38 @@ lands in `runs/it2/` (`runs/it2_mod20/`, `runs/it2_uavhuman/`).
 reference study, and the energy-measurement caveats; read it before comparing
 numbers.
 
-## Results (ERA, RTX 4070 Laptop 8 GB, 3 epochs, one seed)
+## Results (RTX 4070 Laptop 8 GB, 3 epochs, one seed)
+
+Every table below is the best configuration per model by NS# over the runs made
+(protocol learning rates), recomputed from the `*_runs.csv` files. NS_E and
+NS# depend on the validation-set size through the energy term, so they are not
+comparable across datasets. The validation-pass energy has roughly +/-15 J of
+counter quantisation noise (see `docs/methodology.md`).
+
+### MOD20 (primary)
+
+Full tables: [`results/mod20_summary.md`](results/mod20_summary.md),
+[`results/mod20_runs.csv`](results/mod20_runs.csv). 37 runs; validation split of
+326 clips.
+
+| Model | Best by NS# | Top-1 % | Peak train mem MiB | NS# |
+|---|---|---|---|---|
+| VideoMAE-B | QLoRA, BF16 | 95.09 | 617 | 65.08 |
+| Hiera-B | LoRA, FP16 | 95.09 | 1595 | 63.28 |
+| TimeSformer-B | BitFit, FP16 | 98.16 | 2752 | 62.87 |
+| Video Swin-B | BitFit, BF16 | 96.32 | 2928 | 62.60 |
+
+Top-1 is on the validation split and is close to saturated (all methods land
+within a few points), so NS# differences are driven mostly by memory and
+energy. Ties and near-ties are resolved by the first run with the highest NS#;
+Hiera-B LoRA FP16 beats LoRA BF16 and BitFit BF16 by 0.01 NS#, well inside
+measurement noise.
+
+### ERA
 
 Full tables: [`results/it2_summary.md`](results/it2_summary.md),
-[`results/it2_runs.csv`](results/it2_runs.csv). Best configuration per model by
-NS# (protocol learning rates):
+[`results/it2_runs.csv`](results/it2_runs.csv). ERA runs predate the
+environment record, so their `idle_w` and `disturbed` columns are `n/a`.
 
 | Model | Best by NS# | Top-1 % | Peak train mem MiB | NS# |
 |---|---|---|---|---|
