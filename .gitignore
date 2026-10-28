@@ -1,0 +1,14 @@
+# Course / team material: never public
+/*.pdf
+/*.docx
+/private/
+
+# Local tooling and environments
+.venv/
+.claude/
+__pycache__/
+
+# Datasets, weights, raw telemetry: large, separately licensed, or machine-specific
+/data/
+/checkpoints/
+/runs/
